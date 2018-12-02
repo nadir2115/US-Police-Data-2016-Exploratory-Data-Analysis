@@ -7,12 +7,11 @@ cat("\014")
 # close all plots
 graphics.off() 
 
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 library(plotly)
 library(sf)
+library(maps)
 library(rworldmap)
-library(readr)
 library(datasets)
 library(stats)
 library(ggrepel)
@@ -22,7 +21,7 @@ library(rstudioapi)
 library(gtable)
 library(grid)
 library(gridExtra)
-
+library(tools)
 
 # set directory to R script folder
 current_path <- getActiveDocumentContext()$path
@@ -32,6 +31,8 @@ setwd(dirname(current_path ))
 # load data ---------------------------------------------------------------
 pkdata15<-read.csv("2015.csv")
 pkdata16<-read.csv("2016.csv")
+pkdata15extra<-read.csv("US police 2015.csv")
+vcrime<- read.csv("Crime 2015.csv")
 
 pkdata<- rbind(pkdata15,pkdata16)
 
@@ -39,61 +40,87 @@ pkdata$name=NULL
 pkdata$year=NULL
 pkdata$streetaddress= NULL
 pkdata$uid= NULL
+pkdata$day= NULL
+pkdata$month= NULL
 pkdata$age=as.numeric(levels(pkdata$age))[pkdata$age]
+
+pkdata15extra$name=NULL
+pkdata15extra$year=NULL
+pkdata15extra$state_fp= NULL
+pkdata15extra$tract_ce= NULL
+pkdata15extra$geo_id= NULL
+pkdata15extra$county_id= NULL
+pkdata15extra$streetaddress= NULL
+pkdata15extra$namelsad= NULL
+pkdata15extra$county_fp= NULL
+pkdata15extra$share_black=as.numeric(levels(pkdata15extra$share_black))[pkdata15extra$share_black]
+pkdata15extra$share_white=as.numeric(levels(pkdata15extra$share_white))[pkdata15extra$share_white]
+pkdata15extra$share_hispanic=as.numeric(levels(pkdata15extra$share_hispanic))[pkdata15extra$share_hispanic]
+pkdata15extra$pov=as.numeric(levels(pkdata15extra$pov))[pkdata15extra$pov]
+pkdata15extra$age=as.numeric(levels(pkdata15extra$age))[pkdata15extra$age]
+pkdata15extra$p_income=as.numeric(levels(pkdata15extra$p_income))[pkdata15extra$p_income]
+
+
 
 # Summarize data
 summary(pkdata)
-
-ggplot(pkdata, aes(day)) + geom_histogram(color="black",fill="orange",binwidth=1)
-
-# Getting a map
-world <- getMap(resolution = "low")
-class(world)
-world <- st_as_sf(world)
-class(world)
+summary(pkdata15extra)
 
 locdata= subset(pkdata,longitude!="NA" &latitude!='NA')
 
-ggplot(data = world)+
+usa <- st_as_sf(maps::map("state", fill=TRUE, plot =FALSE))
+usa <- cbind(usa, st_coordinates(st_centroid(usa)))
+usa$ID <- toTitleCase(usa$ID)
+
+# Changing state names to abbreviations
+usa$ID= vcrime$State[c(1,3:11,13:51)]
+
+# Police killings by age
+ggplot(usa)+
   geom_sf(fill="grey")+
   geom_jitter(data= locdata, aes(longitude,latitude,col= age), alpha=0.5)+
   coord_sf(xlim = c(min(locdata$longitude)+37, max(locdata$longitude)), 
-           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-10))+
+           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-20))+
   xlab("Longitude")+ 
   ylab("Latitude")+
-  ggtitle("Police killing locations 2015-16")
+  ggtitle("Police killing locations 2015-16")+
+  geom_text_repel(data = usa, aes(X, Y, label = ID), size =3.5, col= "brown")
 
-ggplot(data = world)+
+# Police killings of unarmed individuals
+ggplot(usa)+
   geom_sf(fill="grey")+
   geom_jitter(data= subset(locdata,armed=="No"), aes(longitude,latitude,color= classification),alpha=0.7)+
   coord_sf(xlim = c(min(locdata$longitude)+37, max(locdata$longitude)), 
-           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-10))+
+           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-20))+
   xlab("Longitude")+ 
   ylab("Latitude")+
-  ggtitle("Police killings of unarmed individuals in 2015-16")
+  ggtitle("Police killings of unarmed individuals in 2015-16")+
+  geom_text_repel(data = usa, aes(X, Y, label = ID), size =3.5, col= "brown")
 
 
-#Police killing by race
-ggplot(data = world)+
+#Police killing by race/ethnicity
+ggplot(data = usa)+
   geom_sf(fill="grey")+
   geom_jitter(data=locdata, aes(longitude,latitude,col= raceethnicity), size = 2.5,alpha=0.4)+
   coord_sf(xlim = c(min(locdata$longitude)+37, max(locdata$longitude)), 
-           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-10))+
+           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-20))+
   xlab("Longitude")+ 
   ylab("Latitude")+
-  ggtitle("Police killings by race/ethnicity in 2015-16")
+  ggtitle("Police killings by race/ethnicity in 2015-16")+
+  geom_text_repel(data = usa, aes(X, Y, label = ID), size =3.5, col= "brown")
 
 
-# Just looking at black, white and latino/hispanic individuals
+#looking at black, white and latino/hispanic individuals
 bwhdata= subset(locdata, raceethnicity=="Black"|raceethnicity=="White"|raceethnicity=="Hispanic/Latino")
-ggplot(data = world)+
+ggplot(data = usa)+
   geom_sf(fill="grey")+
   geom_jitter(data=bwhdata, aes(longitude,latitude,col= raceethnicity), size = 2.5,alpha=0.4)+
   coord_sf(xlim = c(min(locdata$longitude)+37, max(locdata$longitude)), 
-           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-10))+
+           ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-20))+
   xlab("Longitude")+ 
   ylab("Latitude")+
-  ggtitle("Police killings by race/ethnicity in 2015-16")
+  ggtitle("Police killings by race/ethnicity in 2015-16")+
+  geom_text_repel(data = usa, aes(X, Y, label = ID), size =3.5, col= "brown")
 
 
 
@@ -200,7 +227,6 @@ shoowtingMW =sum(midwest$classification=="Gunshot")/nrow(midwest)
 shootingW =sum(west$classification=="Gunshot")/nrow(west)
 
 # analyzing shootings by crime
-vcrime<- read.csv("Crime 2015.csv")
 vcrime$Population <- as.numeric(gsub(",","",vcrime$Population))
 vcrime$Violent.crime <- as.numeric(gsub(",","",vcrime$Violent.crime))
 
@@ -227,6 +253,10 @@ plot_ly(x=log10(statedata$Population), y=log10(statedata$Violent.crime),
         z=log10(statedata$Killings), type="scatter3d",label=statedata$State,
         color= statedata$Population)%>%
   layout(scene = list(xaxis = list(title = 'log population'),
-                    yaxis = list(title = 'log violent crime'),
-                    zaxis = list(title = 'log killings')))
+                      yaxis = list(title = 'log violent crime'),
+                      zaxis = list(title = 'log killings')))
+
+
+
+
 
