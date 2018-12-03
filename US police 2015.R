@@ -27,32 +27,22 @@ library(tools)
 current_path <- getActiveDocumentContext()$path
 setwd(dirname(current_path ))
 
-
-# load data ---------------------------------------------------------------
+# load data
 pkdata15<-read.csv("2015.csv")
 pkdata16<-read.csv("2016.csv")
 pkdata15extra<-read.csv("US police 2015.csv")
-vcrime<- read.csv("Crime 2015.csv")
+statedata<- read.csv("Crime 2015.csv")
 
 pkdata<- rbind(pkdata15,pkdata16)
 
-pkdata$name=NULL
-pkdata$year=NULL
-pkdata$streetaddress= NULL
-pkdata$uid= NULL
-pkdata$day= NULL
-pkdata$month= NULL
+pkdata[c("name", "year", "streetaddress", "uid","day","month")] <- list(NULL)
 pkdata$age=as.numeric(levels(pkdata$age))[pkdata$age]
 
-pkdata15extra$name=NULL
-pkdata15extra$year=NULL
-pkdata15extra$state_fp= NULL
-pkdata15extra$tract_ce= NULL
-pkdata15extra$geo_id= NULL
-pkdata15extra$county_id= NULL
-pkdata15extra$streetaddress= NULL
-pkdata15extra$namelsad= NULL
-pkdata15extra$county_fp= NULL
+pkdata15extra[c("name", "year", "streetaddress", "uid","day","month",
+                "state_fp","tract_ce","geo_id","county_id","namelsad",
+                "county_fp")] <- list(NULL)
+
+
 pkdata15extra$share_black=as.numeric(levels(pkdata15extra$share_black))[pkdata15extra$share_black]
 pkdata15extra$share_white=as.numeric(levels(pkdata15extra$share_white))[pkdata15extra$share_white]
 pkdata15extra$share_hispanic=as.numeric(levels(pkdata15extra$share_hispanic))[pkdata15extra$share_hispanic]
@@ -73,7 +63,7 @@ usa <- cbind(usa, st_coordinates(st_centroid(usa)))
 usa$ID <- toTitleCase(usa$ID)
 
 # Changing state names to abbreviations
-usa$ID= vcrime$State[c(1,3:11,13:51)]
+usa$ID= statedata$State[c(1,3:11,13:51)]
 
 # Police killings by age
 ggplot(usa)+
@@ -123,37 +113,31 @@ ggplot(data = usa)+
   geom_text_repel(data = usa, aes(X, Y, label = ID), size =3.5, col= "brown")
 
 
+# Adding region feature
+pkdata=
+  mutate(pkdata, region = 
+           ifelse(state=="CA"|state=="AZ"|state=="NM"|state=="CO"|state=="ID"|state=="OR"|
+                    state=="WA"|state=="AK"|state=="HI", "West",
+                  ifelse(state=="TX"|state=="OK"|state=="AR"|state=="LA"|state=="MS"|state=="AL"|
+                           state=="TN"|state=="FL"|state=="GA"|state=="NC"|state=="SC"|state=="VA"|
+                           state=="KY"|state=="MD"|state=="WV"|state=="DC","South",
+                         ifelse(state=="KS"|state=="MO"|state=="IL"|state=="IN"|state=="OH"
+                                |state=="IA"|state=="NE"|state=="SD"|state=="ND"|state=="MN"|
+                                  state=="WI"|state=="MI","Midwest", "Northeast"))))
 
-# Separating into regions
-west= pkdata[pkdata$state=="CA"|pkdata$state=="AZ"|pkdata$state=="NM"|pkdata$state=="CO"|
-               pkdata$state=="UT"|pkdata$state=="NV"|pkdata$state=="WY"|pkdata$state=="MT"|
-               pkdata$state=="ID"|pkdata$state=="OR"|pkdata$state=="WA"|pkdata$state=="AK"|pkdata$state=="HI",]
-south= pkdata[pkdata$state=="TX"|pkdata$state=="OK"|pkdata$state=="AR"|pkdata$state=="LA"|pkdata$state=="MS"|
-                pkdata$state=="AL"|pkdata$state=="TN"|pkdata$state=="FL"|pkdata$state=="GA"|pkdata$state=="NC"|
-                pkdata$state=="SC"|pkdata$state=="VA"|pkdata$state=="KY"|pkdata$state=="WV",]
-midwest= pkdata[pkdata$state=="KS"|pkdata$state=="MO"|pkdata$state=="IL"|pkdata$state=="IN"|pkdata$state=="OH"|
-                  pkdata$state=="IA"|pkdata$state=="NE"|pkdata$state=="SD"|pkdata$state=="ND"|pkdata$state=="MN"|
-                  pkdata$state=="WI"|pkdata$state=="MI",]
-northeast= pkdata[pkdata$state=="NJ"|pkdata$state=="PA"|pkdata$state=="DE"|pkdata$state=="MD"|pkdata$state=="RI"|
-                    pkdata$state=="CT"|pkdata$state=="NY"|pkdata$state=="MA"|pkdata$state=="NH"|pkdata$state=="ME"|
-                    pkdata$state=="VT"|pkdata$state=="DC",]
-
-northeast$region= "Northeast"
-south$region= "South"
-midwest$region= "Midwest"
-west$region= "West"
-pkdata= rbind(northeast,midwest,south,west)
+summary(subset(pkdata,region=="Midwest"))
+summary(subset(pkdata,region=="West"))
+summary(subset(pkdata,region=="South"))
+summary(subset(pkdata,region=="Northeast"))
 
 
 blacks= pkdata[pkdata$raceethnicity=="Black",]
 whites= pkdata[pkdata$raceethnicity=="White",]
 hisLats= pkdata[pkdata$raceethnicity=="Hispanic/Latino",]
+summary(blacks)
+summary(whites)
+summary(hisLats)
 
-
-summary(midwest)
-summary(west)
-summary(south)
-summmary(northeast)
 
 # Overlapping histograms for age and race
 ggplot(pkdata,aes(x=age)) + 
@@ -164,13 +148,13 @@ ggplot(pkdata,aes(x=age)) +
 # Histograms breaking down race and age
 p1=ggplot(hisLats, aes(age))+ 
   geom_histogram(color="black",fill="pink",binwidth=1, alpha=0.8)+
-  ggtitle("Race/ethnicity: Hispanic/latino") + xlim(6, 87)
+  ggtitle("Individuals killed by age- Race/ethnicity: Hispanic/latino") + xlim(6, 87)
 p2=ggplot(blacks, aes(age))+ 
   geom_histogram(color="black",fill="green",binwidth=1, alpha=0.3)+
-  ggtitle("Race/ethnicity: Black") + xlim(6, 87)
+  ggtitle("Individuals killed by age- Race/ethnicity: Black") + xlim(6, 87)
 p3=ggplot(whites, aes(age))+ 
   geom_histogram(color="black",fill="pink",binwidth=1, alpha=0.3)+
-  ggtitle("Race/ethnicity: White") + xlim(6, 87)
+  ggtitle("Individuals killed by age- Race/ethnicity: White") + xlim(6, 87)
 g1 <- ggplotGrob(p1)
 g2 <- ggplotGrob(p2)
 g3 <- ggplotGrob(p3)
@@ -179,32 +163,72 @@ g$widths <- unit.pmax(g1$widths,g2$widths, g3$widths)
 grid.newpage()
 grid.draw(g)
 
-summary(blacks)
-summary(whites)
-summary(hisLats)
 
 # Boxplots
 ggplot(data=pkdata,aes(x=raceethnicity,y=age,  fill=raceethnicity ))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
   labs(x='Race/Ethnicity', y= 'Age')
 
-# Age break down with armed %
+# Age break down with armed by region
 ggplot(data=pkdata,aes(x=region,y=age,  fill=armed ))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
   labs(x='Race/Ethnicity', y= 'Age')
 
-# Age break down with classification of death
+# Age break down with classification/cause of death by region
 ggplot(data=pkdata,aes(x=region,y=age,  fill=classification ))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Age')
+  labs(x='Race/Ethnicity', y= 'Age')+
+  ggtitle("Age and cause of death")
 
-ggplot(data=pkdata,aes(x=region,y=h_income,  fill=raceethnicity ))+
-  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Tract-level median household income')
-
+# Age breakdown with race by region
 ggplot(data=pkdata,aes(x=region,y=age,  fill=raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
   labs(x='Region', y= 'Age')
+
+# household income by race/ethnicity
+ggplot(data=pkdata15extra,aes(x=raceethnicity,y=h_income, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Tract-level median household income')
+
+# personal income by race/ethnicity
+ggplot(data=pkdata15extra,aes(x=raceethnicity,y=p_income, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Tract-level median personal income')
+
+# county income by race/ethnicity
+ggplot(data=pkdata15extra,aes(x=raceethnicity,y=county_income, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Tract-level median county income')
+
+# Share of pop that is non-Hispanic white
+ggplot(data=pkdata15extra,aes(x=raceethnicity,y=share_white, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Share of pop that is non-Hispanic white')
+
+# Share of pop that is black
+ggplot(data=pkdata15extra,aes(x=raceethnicity,y=share_black, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Share of pop that is black only')
+
+# Share of pop that is hispanic
+ggplot(data=pkdata15extra,aes(x=raceethnicity,y=share_hispanic, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Share of pop that is hispanic')
+
+# Poverty rate in tract
+ggplot(data=pkdata15extra,aes(x=raceethnicity,y=pov, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Poverty rate in tract')
+
+# unemployment rate in tract
+ggplot(data=pkdata15extra,aes(x=urate,y=pov, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Unemployment rate in tract')
+
+# Share of 25+ pop with BA or higher
+ggplot(data=pkdata15extra,aes(x=college,y=pov, fill= raceethnicity))+
+  geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
+  labs(x='Race/Ethnicity', y= 'Share of 25+ pop with BA or higher')
 
 unarmedS =sum(south$armed=="No")/nrow(south)
 unarmedNE =sum(northeast$armed=="No")/nrow(northeast)
@@ -226,14 +250,13 @@ shootingNE =sum(northeast$classification=="Gunshot")/nrow(northeast)
 shoowtingMW =sum(midwest$classification=="Gunshot")/nrow(midwest)
 shootingW =sum(west$classification=="Gunshot")/nrow(west)
 
-# analyzing shootings by crime
-vcrime$Population <- as.numeric(gsub(",","",vcrime$Population))
-vcrime$Violent.crime <- as.numeric(gsub(",","",vcrime$Violent.crime))
-
+# states
+statedata$Population <- as.numeric(gsub(",","",statedata$Population))
+statedata$Violent.crime <- as.numeric(gsub(",","",statedata$Violent.crime))
 stateCount=data.frame(table(pkdata15$state))
 colnames(stateCount) <- c("State", "Killings")
 
-statedata= merge(stateCount, vcrime)
+statedata= merge(stateCount, statedata)
 
 ggplot(statedata, aes(Population, Violent.crime, size= Violent.crime/Population))+
   geom_point(col= "orange3",alpha=0.5)+
@@ -257,6 +280,19 @@ plot_ly(x=log10(statedata$Population), y=log10(statedata$Violent.crime),
                       zaxis = list(title = 'log killings')))
 
 
+# Cities
+cities= data.frame(table(pkdata$city))
+colnames(cities) <- c("city", "Killings")
+cities= subset(cities, Killings>6)
+cityData= read.csv("city data.csv")
+cityData= subset(cityData, population>100000)
+cities= merge(cities,cityData)
+cities=cities[-c(11,18),c(1:9)]
 
 
+ggplot(cities, aes(Killings,population_proper ,size= density))+
+  geom_point(alpha=0.3, col="red3")+
+  geom_text_repel(aes(label=city), size=3.2)+
+  geom_abline(intercept=0, slope=sum(cities$population_proper)/sum(cities$Killings), size=1)+
+  ggtitle("Police killings by city- 2015-16")
 
