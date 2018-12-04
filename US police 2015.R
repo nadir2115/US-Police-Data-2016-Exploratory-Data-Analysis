@@ -22,6 +22,7 @@ library(gtable)
 library(grid)
 library(gridExtra)
 library(tools)
+library(scales)
 
 # set directory to R script folder
 current_path <- getActiveDocumentContext()$path
@@ -79,7 +80,7 @@ ggplot(usa)+
 # Police killings of unarmed individuals
 ggplot(usa)+
   geom_sf(fill="grey")+
-  geom_jitter(data= subset(locdata,armed=="No"), aes(longitude,latitude,color= classification),alpha=0.7)+
+  geom_jitter(data= subset(locdata,armed=="No"), aes(longitude,latitude,color= classification),size=3,alpha=0.7)+
   coord_sf(xlim = c(min(locdata$longitude)+37, max(locdata$longitude)), 
            ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-20))+
   xlab("Longitude")+ 
@@ -101,10 +102,11 @@ ggplot(data = usa)+
 
 
 #looking at black, white and latino/hispanic individuals
-bwhdata= subset(locdata, raceethnicity=="Black"|raceethnicity=="White"|raceethnicity=="Hispanic/Latino")
+bwhdata= subset(locdata, raceethnicity=="Black"|raceethnicity=="White"|
+                  raceethnicity=="Hispanic/Latino"|raceethnicity== "Native American")
 ggplot(data = usa)+
   geom_sf(fill="grey")+
-  geom_jitter(data=bwhdata, aes(longitude,latitude,col= raceethnicity), size = 2.5,alpha=0.4)+
+  geom_jitter(data=bwhdata, aes(longitude,latitude,col= raceethnicity), size = 2.5,alpha=0.5)+
   coord_sf(xlim = c(min(locdata$longitude)+37, max(locdata$longitude)), 
            ylim = c(min(locdata$latitude)+6, max(locdata$latitude)-20))+
   xlab("Longitude")+ 
@@ -139,13 +141,13 @@ summary(whites)
 summary(hisLats)
 
 
-# Overlapping histograms for age and race
+  # Overlapping histograms for age and race
 ggplot(pkdata,aes(x=age)) + 
   geom_histogram(data=subset(pkdata,raceethnicity == 'Black'),fill = "red", alpha = 0.2,binwidth = 1) +
   geom_histogram(data=subset(pkdata,raceethnicity == 'White'),fill = "blue", alpha = 0.2,binwidth = 1) +
   geom_histogram(data=subset(pkdata,raceethnicity == 'Hispanic/Latino'),fill = "yellow", alpha = 0.3,binwidth = 1)
 
-# Histograms breaking down race and age
+# individual Histograms breaking down race and age
 p1=ggplot(hisLats, aes(age))+ 
   geom_histogram(color="black",fill="pink",binwidth=1, alpha=0.8)+
   ggtitle("Individuals killed by age- Race/ethnicity: Hispanic/latino") + xlim(6, 87)
@@ -167,12 +169,15 @@ grid.draw(g)
 # Boxplots
 ggplot(data=pkdata,aes(x=raceethnicity,y=age,  fill=raceethnicity ))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Age')
+  labs(x='Race/Ethnicity', y= 'Age')+
+  ggtitle("Age and 'armed' status of the deceased")
+
 
 # Age break down with armed by region
 ggplot(data=pkdata,aes(x=region,y=age,  fill=armed ))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Age')
+  labs(x='Race/Ethnicity', y= 'Age')+
+  ggtitle("Age and 'armed' status of deceased by region")
 
 # Age break down with classification/cause of death by region
 ggplot(data=pkdata,aes(x=region,y=age,  fill=classification ))+
@@ -188,37 +193,46 @@ ggplot(data=pkdata,aes(x=region,y=age,  fill=raceethnicity))+
 # household income by race/ethnicity
 ggplot(data=pkdata15extra,aes(x=raceethnicity,y=h_income, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Tract-level median household income')
+  labs(x='Race/Ethnicity', y= 'Tract-level median household income')+
+  ggtitle("Household median income at tract-level vs race/ethnicty")
 
 # personal income by race/ethnicity
 ggplot(data=pkdata15extra,aes(x=raceethnicity,y=p_income, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Tract-level median personal income')
+  labs(x='Race/Ethnicity', y= 'Tract-level median personal income')+
+  ggtitle("Personal median income at tract-level vs race/ethnicty")
 
 # county income by race/ethnicity
 ggplot(data=pkdata15extra,aes(x=raceethnicity,y=county_income, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Tract-level median county income')
+  labs(x='Race/Ethnicity', y= 'Tract-level median county income')+
+  ggtitle("Country median income at tract-level vs race/ethnicty")
+
 
 # Share of pop that is non-Hispanic white
 ggplot(data=pkdata15extra,aes(x=raceethnicity,y=share_white, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Share of pop that is non-Hispanic white')
+  labs(x='Race/Ethnicity', y= 'Share of pop that is non-Hispanic white')+
+  ggtitle("Share of pop in tract that is non-Hispanic white vs Race/Ethnicity of deceased")
 
 # Share of pop that is black
 ggplot(data=pkdata15extra,aes(x=raceethnicity,y=share_black, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Share of pop that is black only')
+  labs(x='Race/Ethnicity', y= 'Share of pop that is black only')+
+  ggtitle("Share of pop in tract that is black vs Race/Ethnicity of deceased")
 
 # Share of pop that is hispanic
 ggplot(data=pkdata15extra,aes(x=raceethnicity,y=share_hispanic, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Share of pop that is hispanic')
+  labs(x='Race/Ethnicity', y= 'Share of pop that is hispanic')+
+  ggtitle("Share of pop in tract that is hispanic vs Race/Ethnicity of deceased")
 
 # Poverty rate in tract
 ggplot(data=pkdata15extra,aes(x=raceethnicity,y=pov, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Poverty rate in tract')
+  labs(x='Race/Ethnicity', y= 'Poverty rate in tract')+
+  ggtitle("Poverty at tract-level vs race/ethnicty")
+
 
 # unemployment rate in tract
 ggplot(data=pkdata15extra,aes(x=urate,y=pov, fill= raceethnicity))+
@@ -228,12 +242,45 @@ ggplot(data=pkdata15extra,aes(x=urate,y=pov, fill= raceethnicity))+
 # Share of 25+ pop with BA or higher
 ggplot(data=pkdata15extra,aes(x=college,y=pov, fill= raceethnicity))+
   geom_boxplot(outlier.colour="Black",  outlier.size=1, notch=FALSE)+
-  labs(x='Race/Ethnicity', y= 'Share of 25+ pop with BA or higher')
+  labs(x='Race/Ethnicity', y= 'Share of 25+ pop with BA or higher')+
+  ggtitle("Education of tract vs race/ethnicity")
 
-unarmedS =sum(south$armed=="No")/nrow(south)
-unarmedNE =sum(northeast$armed=="No")/nrow(northeast)
-unarmedMW =sum(midwest$armed=="No")/nrow(midwest)
-unarmedW =sum(west$armed=="No")/nrow(west)
+# stacked bar plots and histograms
+
+knownraced=subset(pkdata, raceethnicity!="Other"&raceethnicity!="Unknown")
+
+# overall deaths by race
+ggplot(knownraced,aes(raceethnicity)) + 
+  geom_bar(fill="pink") +
+  ggtitle("Killings vs race/ethnicity of deceased")
+
+# Armed/how by race/ethnicity
+ggplot(knownraced,aes(raceethnicity)) + 
+  geom_bar(aes(fill = armed), position = "fill")+
+  ggtitle("'Armed' status breakdown by race")
+
+
+# Cause of death by race/ethnicity
+ggplot(knownraced,aes(raceethnicity)) + 
+  geom_bar(aes(fill = classification), position = "fill")+
+  ggtitle("Cause of death by race/ethnicity")
+
+
+# Cause of death by region
+ggplot(knownraced,aes(region)) + 
+  geom_bar(aes(fill = classification), position = "fill")+
+  ggtitle("Cause of death by region")
+
+# Armed status by region
+ggplot(knownraced,aes(region)) + 
+  geom_bar(aes(fill = armed), position = "fill")+
+  ggtitle("'armed' status of deceased by region")
+
+
+unarmedS =sum(pkdata$armed=="No" & pkdata$region=="South")/sum(pkdata$region=="South")
+unarmedNE =sum(pkdata$armed=="No" & pkdata$region=="Northeast")/sum(pkdata$region=="Northeast")
+unarmedMW =sum(pkdata$armed=="No" & pkdata$region=="Midwest")/sum(pkdata$region=="Midwest")
+unarmedW =sum(pkdata$armed=="No" & pkdata$region=="West")/sum(pkdata$region=="West")
 
 unarmedTX =sum(pkdata$armed=="No" & pkdata$state=="TX")/sum(pkdata$state=="TX")
 unarmedCA =sum(pkdata$armed=="No" & pkdata$state=="CA")/sum(pkdata$state=="CA")
@@ -262,13 +309,14 @@ ggplot(statedata, aes(Population, Violent.crime, size= Violent.crime/Population)
   geom_point(col= "orange3",alpha=0.5)+
   geom_text_repel(aes(label=State), size=4)+
   geom_abline(intercept=0, slope=sum(statedata$Violent.crime)/sum(statedata$Population))+
-  ggtitle("Police killings by state- 2015-16")
+  ggtitle("Police killings by state- 2015")
 
 ggplot(statedata, aes(Killings,Violent.crime ,size= Violent.crime/Population))+
   geom_point(alpha=0.3,color="red")+
   geom_text_repel(aes(label=State), size=4)+
   geom_abline(intercept=0, slope=sum(statedata$Violent.crime)/sum(statedata$Killings), size=1)+
-  ggtitle("Police killings by state- 2015-16")
+  ylab("Incidences of violent crime")+
+  ggtitle("Police killings by state- 2015")
 
 
 set.seed(417)
@@ -292,7 +340,7 @@ cities=cities[-c(11,18),c(1:9)]
 
 ggplot(cities, aes(Killings,population_proper ,size= density))+
   geom_point(alpha=0.3, col="red3")+
-  geom_text_repel(aes(label=city), size=3.2)+
+  geom_text_repel(aes(label=city), size=3.8)+
   geom_abline(intercept=0, slope=sum(cities$population_proper)/sum(cities$Killings), size=1)+
-  ggtitle("Police killings by city- 2015-16")
+  ggtitle("Police killings by city- 2015")
 
