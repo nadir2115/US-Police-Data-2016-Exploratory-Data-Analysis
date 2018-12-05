@@ -127,6 +127,11 @@ pkdata=
                                 |state=="IA"|state=="NE"|state=="SD"|state=="ND"|state=="MN"|
                                   state=="WI"|state=="MI","Midwest", "Northeast"))))
 
+pkdata= mutate(pkdata, agegroup = 
+           ifelse(age<18, "under-18",
+                  ifelse(age>17 & age<36,"18-35","over 35")))
+  
+
 summary(subset(pkdata,region=="Midwest"))
 summary(subset(pkdata,region=="West"))
 summary(subset(pkdata,region=="South"))
